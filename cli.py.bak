@@ -1,0 +1,66 @@
+import argparse
+from generator_sqli import SQLiGenerator
+from generator_xss import XSSGenerator
+from encoder import Encoder
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Recon Tool CLI")
+
+    sub = parser.add_subparsers(dest="command")
+
+    # -------------------- LIST PAYLOADS --------------------
+    list_cmd = sub.add_parser("list", help="List all payloads")
+    list_cmd.add_argument("--type", choices=["sqli", "xss"], required=True)
+
+    # -------------------- GENERATE PAYLOAD --------------------
+    gen_cmd = sub.add_parser("generate", help="Generate a payload by ID")
+    gen_cmd.add_argument("--id", required=True)
+
+    # -------------------- ENCODE PAYLOAD --------------------
+    enc_cmd = sub.add_parser("encode", help="Encode a payload")
+    enc_cmd.add_argument("--method", required=True, choices=["base64", "url", "html"])
+    enc_cmd.add_argument("--payload", required=True)
+
+    args = parser.parse_args()
+
+    # ----- LIST -----
+    if args.command == "list":
+        if args.type == "sqli":
+            g = SQLiGenerator()
+            print("\nAvailable SQLi Payloads:")
+            for pid in g.list_ids():
+                print(" -", pid)
+
+        elif args.type == "xss":
+            g = XSSGenerator()
+            print("\nAvailable XSS Payloads:")
+            for pid in g.list_ids():
+                print(" -", pid)
+
+    # ----- GENERATE -----
+    elif args.command == "generate":
+        # Auto-detect if SQLi or XSS based on ID prefix
+        if args.id.startswith("SQLI_"):
+            g = SQLiGenerator()
+        else:
+            g = XSSGenerator()
+
+        payload = g.generate_by_id(args.id)
+        if payload:
+            print("\nGenerated Payload:\n", payload)
+        else:
+            print("\n[ERROR] Invalid payload ID!")
+
+    # ----- ENCODE -----
+    elif args.command == "encode":
+        payload = args.payload
+
+        encoder = Encoder()
+        encoded = encoder.encode(payload, args.method)
+
+        print(f"\nEncoded ({args.method}) Payload:\n", encoded)
+
+
+if __name__ == "__main__":
+    main()

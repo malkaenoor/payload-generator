@@ -1,0 +1,33 @@
+# generator_xss.py
+# XSSGenerator class - reads payload IDs from registry.PAYLOAD_REGISTRY
+# NOTE: registry.PAYLOAD_REGISTRY should exist in registry.py in same folder.
+
+from registry import PAYLOAD_REGISTRY
+
+class XSSGenerator:
+    def __init__(self):
+        # collect IDs that start with "XSS_"
+        self.ids = [k for k in PAYLOAD_REGISTRY.keys() if k.startswith("XSS_")]
+
+    def list_ids(self):
+        """Return sorted list of registered XSS payload IDs."""
+        return sorted(self.ids)
+
+    def generate_by_id(self, pid):
+        """Return the payload string for a given payload ID (or None)."""
+        return PAYLOAD_REGISTRY.get(pid)
+
+    def generate_by_type(self, xtype):
+        """
+        Generate payloads by logical type:
+        supported types: reflected, stored, dom, bypass
+        This is a simple mapping; update mapping to match your approved registry.
+        """
+        mapping = {
+            "reflected": ["XSS_REFLECTED_001", "XSS_IMG_ONERROR_002"],
+            "stored": ["XSS_TEMPLATE_014", "XSS_CUSTOM_015"],
+            "dom": ["XSS_SVG_003", "XSS_SCRIPT_SRC_013", "XSS_EVENT_005"],
+            "bypass": ["XSS_SVG_003", "XSS_IMG_SRC_010", "XSS_EVENT_005"],
+        }
+        ids = mapping.get(xtype.lower(), [])
+        return [PAYLOAD_REGISTRY.get(i) for i in ids if i in PAYLOAD_REGISTRY]

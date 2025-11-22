@@ -1,0 +1,115 @@
+#!/usr/bin/env python3
+# cli.py
+import argparse
+from generator_xss import XSSGenerator
+from generator_sqli import SQLiGenerator
+from encoders import ENCODERS
+import obfuscate
+import utils
+
+def list_payloads(ptype):
+    if ptype == "xss":
+        g = XSSGenerator()
+        ids = g.list_ids()
+    else:
+        g = SQLiGenerator()
+        ids = g.list_ids()
+    print(f"\nAvailable payloads in '{ptype}':")
+    for i in ids:
+        print(" -", i)
+    print()
+
+def generate(ptype, by, identifier, encode=None, obf=None, export=None, out=None, copy=False):
+    results = []
+    if ptype == "xss":
+        g = XSSGenerator()
+        if by == "id":
+            val = g.generate_by_id(identifier)
+            if val:
+                results.append(val)
+        else:
+            vals = g.generate_by_type(identifier)
+            results.extend([v for v in vals if v])
+    else:
+        g = SQLiGenerator()
+        if by == "id":
+            val = g.generate_by_id(identifier)
+            if val:
+                results.append(val)
+        else:
+            vals = g.generate_by_type(identifier)
+            results.extend([v for v in vals if v])
+
+    # apply obfuscation
+    if obf:
+        ob_funcs = {
+            "comments": obfuscate.insert_comments,
+            "spacing": obfuscate.random_spacing,
+            "caseswap": obfuscate.case_swap
+        }
+        fn = ob_funcs.get(obf)
+        if fn:
+            results = [fn(r) for r in results]
+
+    # apply encoding
+    if encode:
+        enc_fn = ENCODERS.get(encode)
+        if not enc_fn:
+            print("[!] Unknown encoder:", encode)
+        else:
+            results = [enc_fn(r) for r in results]
+
+    # print results
+    for i, r in enumerate(results, 1):
+        print(f"[{i}] {r}")
+
+    # export
+    if export and out:
+        if export == "json":
+            fname = utils.export_to_json(results, out)
+        else:
+            fname = utils.export_to_txt(results, out)
+        print("[*] Exported to", fname)
+
+    # copy
+    if copy:
+        if results:
+            ok = utils.copy_to_clipboard(results[0])
+            if ok:
+                print("[*] First payload copied to clipboard")
+            else:
+                print("[!] pyperclip not available. Install: pip install pyperclip")
+
+def main():
+    p = argparse.ArgumentParser(description="PayloadGen CLI (safe placeholders)")
+    sub = p.add_subparsers(dest="cmd")
+
+    # list
+    p_list = sub.add_parser("list")
+    p_list.add_argument("--type", choices=["xss", "sqli"], required=True)
+
+    # generate
+    p_gen = sub.add_parser("generate")
+    p_gen.add_argument("--type", choices=["xss", "sqli"], required=True)
+    group = p_gen.add_mutually_exclusive_group(required=True)
+    group.add_argument("--id", help="Generate by payload ID (e.g. XSS_REFLECTED_001)")
+    group.add_argument("--category", help="Generate by category/type (e.g. reflected, union, blind)")
+    p_gen.add_argument("--encode", choices=list(ENCODERS.keys()), help="Apply encoder")
+    p_gen.add_argument("--obf", choices=["comments","spacing","caseswap"], help="Apply obfuscation")
+    p_gen.add_argument("--export", choices=["json","txt"], help="Export format")
+    p_gen.add_argument("--out", help="Output filename for export")
+    p_gen.add_argument("--copy", action="store_true", help="Copy first payload to clipboard")
+
+    args = p.parse_args()
+    if args.cmd == "list":
+        list_payloads(args.type)
+    elif args.cmd == "generate":
+        by = "id" if args.id else "category"
+        identifier = args.id if args.id else args.category
+        generate(args.type, by, identifier, encode=args.encode, obf=args.obf,
+                 export=args.export, out=args.out, copy=args.copy)
+    else:
+        p.print_help()
+
+if __name__ == "__main__":
+    main()

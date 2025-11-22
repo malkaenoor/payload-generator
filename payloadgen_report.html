@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Payload Generator Project – Progress Report</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #f5f5f5;
+        padding: 25px;
+        line-height: 1.6;
+    }
+    h1, h2, h3 { color: #333; }
+    .section {
+        background: white;
+        padding: 20px;
+        margin-bottom: 25px;
+        border-radius: 10px;
+        border-left: 7px solid #2a6df4;
+        box-shadow: 0 0 5px #ccc;
+    }
+    .code {
+        background: #111;
+        color: #0f0;
+        padding: 15px;
+        border-radius: 8px;
+        white-space: pre-wrap;
+        font-family: Consolas, monospace;
+        font-size: 14px;
+    }
+    .todo {
+        color: #d60000;
+        font-weight: bold;
+    }
+    .done {
+        color: green;
+        font-weight: bold;
+    }
+</style>
+</head>
+<body>
+
+<h1>Payload Generator – Development Progress Report</h1>
+<p><b>Student:</b> Ayesha Noor</p>
+<p><b>Project:</b> Offensive Security Payload Generator CLI Tool</p>
+<p><b>Status:</b> In-Progress (Major Components Implemented)</p>
+
+
+<!-- OVERVIEW -->
+<div class="section">
+<h2>1. Project Overview</h2>
+<p>
+This project is a custom Payload Generator tool created in Python for Kali Linux.  
+It supports:
+</p>
+<ul>
+    <li>XSS Payload Generator</li>
+    <li>SQL Injection Payload Generator</li>
+    <li>Encoding Module (Base64, URL, HTML)</li>
+    <li>Modular Registry System</li>
+    <li>CLI Interface</li>
+</ul>
+</div>
+
+
+<!-- MODULE 1 -->
+<div class="section">
+<h2>2. Implemented Module: Payload Registry</h2>
+<p class="done">✔ Completed</p>
+<p>Registry file maps payload IDs → stored payload strings.</p>
+
+<h3>registry.py</h3>
+<div class="code">
+PAYLOAD_REGISTRY = {
+    "XSS_REFLECTED_001": "&lt;REFLECTED_TEST_STRING_1&gt;",
+    "XSS_IMG_ONERROR_002": "&lt;IMG_ONERROR_TEST_1&gt;",
+    "XSS_SVG_003": "&lt;SVG_TEST_1&gt;",
+    ...
+
+    "SQLI_UNION_001": "&lt;UNION_TEST_1&gt;",
+    "SQLI_BOOLEAN_002": "&lt;BOOLEAN_TEST_1&gt;",
+    "SQLI_TIME_003": "&lt;TIME_BASED_TEST_1&gt;",
+    ...
+}
+</div>
+</div>
+
+
+
+<!-- MODULE 2 -->
+<div class="section">
+<h2>3. Implemented Module: XSS Generator</h2>
+<p class="done">✔ Completed</p>
+
+<h3>generator_xss.py</h3>
+<div class="code">
+from registry import PAYLOAD_REGISTRY
+
+class XSSGenerator:
+    def list_ids(self):
+        return [i for i in PAYLOAD_REGISTRY if i.startswith("XSS")]
+
+    def generate_by_id(self, pid):
+        return PAYLOAD_REGISTRY.get(pid)
+</div>
+
+<h3>CLI Test Output:</h3>
+<div class="code">
+python3 cli.py list --type xss
+➡ Shows all XSS payload IDs successfully.
+</div>
+</div>
+
+
+
+<!-- MODULE 3 -->
+<div class="section">
+<h2>4. Implemented Module: SQL Injection Generator</h2>
+<p class="done">✔ Completed</p>
+
+<h3>generator_sqli.py</h3>
+<div class="code">
+from registry import PAYLOAD_REGISTRY
+
+class SQLiGenerator:
+    def list_ids(self):
+        return [i for i in PAYLOAD_REGISTRY if i.startswith("SQLI")]
+
+    def generate_by_id(self, pid):
+        return PAYLOAD_REGISTRY.get(pid)
+</div>
+
+<h3>CLI Test Output:</h3>
+<div class="code">
+python3 cli.py list --type sqli
+➡ All SQLi IDs appear correctly.
+</div>
+</div>
+
+
+
+<!-- MODULE 4 -->
+<div class="section">
+<h2>5. Implemented Module: Encoder</h2>
+<p class="done">✔ Completed (Base64, URL, HTML encoding)</p>
+
+<h3>encoder.py</h3>
+<div class="code">
+import base64, urllib.parse, html
+
+class Encoder:
+    def encode(self, payload, method):
+        if method == "base64": return base64.b64encode(payload.encode()).decode()
+        if method == "url": return urllib.parse.quote(payload)
+        if method == "html": return html.escape(payload)
+        return None
+</div>
+
+<h3>Encoding Test Output:</h3>
+<div class="code">
+python3 cli.py encode --method base64 --payload "&lt;script&gt;"
+➡ PHNjcmlwdD4=
+
+python3 cli.py encode --method url --payload "&lt;IMG SRC=x&gt;"
+➡ %3CIMG%20SRC%3Dx%3E
+</div>
+</div>
+
+
+
+<!-- MODULE 5 -->
+<div class="section">
+<h2>6. CLI Controller (Working)</h2>
+<p class="done">✔ Completed</p>
+
+<h3>cli.py</h3>
+<div class="code">
+Handles:  
+• list payloads  
+• generate payloads  
+• encode payloads  
+• dynamic registry usage
+</div>
+</div>
+
+
+
+<!-- Remaining Work -->
+<div class="section">
+<h2>7. Remaining Work</h2>
+
+<ul>
+<li class="todo">❗ Real-world payload strings add karna (currently placeholders)</li>
+<li class="todo">❗ XSS advanced bypass module  
+    – SVG onload  
+    – null byte  
+    – js event bypass  
+</li>
+<li class="todo">❗ SQLi WAF bypasses  
+    – /**/ comments  
+    – case changes  
+    – random whitespace  
+</li>
+<li class="todo">❗ Optional: PDF report generator</li>
+<li class="todo">❗ Optional: Payload fuzzer</li>
+<li class="todo">❗ Optional: Menu-based TUI</li>
+</ul>
+
+</div>
+
+
+<!-- END -->
+<div class="section">
+<h2>8. Conclusion</h2>
+<p>
+Aapka project successfully structure ho chuka hai.  
+Core modules (XSS, SQLi, Encoding, Registry, CLI) implement ho chuke hain.  
+Remaining work sirf advanced payload logic aur bypass engines ka hai.
+</p>
+</div>
+
+</body>
+</html>

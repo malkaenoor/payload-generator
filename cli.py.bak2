@@ -1,0 +1,101 @@
+#!/usr/bin/env python3
+import argparse
+from generator_sqli import SQLiGenerator
+from generator_xss import XSSGenerator
+from encoder import Encoder
+
+def list_payloads(ptype):
+    if ptype == "xss":
+        g = XSSGenerator()
+        ids = g.list_ids()
+    else:
+        g = SQLiGenerator()
+        ids = g.list_ids()
+    print(f"\nAvailable {ptype.upper()} Payloads:")
+    for i in ids:
+        print(" -", i)
+    print()
+
+def generate_payload(ptype, by, identifier):
+    results = []
+    if ptype == "xss":
+        g = XSSGenerator()
+        if by == "id":
+            val = g.generate_by_id(identifier)
+            if val:
+                results.append(val)
+        else:
+            vals = g.generate_by_type(identifier)
+            results.extend([v for v in vals if v])
+    else:
+        g = SQLiGenerator()
+        if by == "id":
+            val = g.generate_by_id(identifier)
+            if val:
+                results.append(val)
+        else:
+            vals = g.generate_by_type(identifier)
+            results.extend([v for v in vals if v])
+
+    if results:
+        print("\nGenerated payloads:")
+        for i, r in enumerate(results,1):
+            print(f"[{i}] {r}")
+    else:
+        print("\n[!] No payloads found for given parameters.")
+
+def encode_payload(method, payload):
+    enc = Encoder()
+    out = None
+    # encoder.encode(method, text) - some encoders implement differently
+    # To be safe, check for specific method functions if present
+    if hasattr(enc, "encode"):
+        # our encoder.encode(method, text) signature may differ; try both patterns
+        try:
+            out = enc.encode(method, payload)
+        except TypeError:
+            # fallback to older style (encode(method, payload) vs encode(payload, method))
+            try:
+                out = enc.encode(payload, method)
+            except Exception:
+                out = None
+    print("\nEncoded ({}) Payload:\n{}".format(method, out))
+
+def main():
+    parser = argparse.ArgumentParser(description="PayloadGen CLI (XSS + SQLi + Encoder)")
+    sub = parser.add_subparsers(dest="cmd")
+
+    # list
+    p_list = sub.add_parser("list")
+    p_list.add_argument("--type", choices=["xss","sqli"], required=True)
+
+    # generate
+    p_gen = sub.add_parser("generate")
+    p_gen.add_argument("--type", choices=["xss","sqli"], required=True)
+    group = p_gen.add_mutually_exclusive_group(required=True)
+    group.add_argument("--id", help="Generate by payload ID (e.g. XSS_REFLECTED_001)")
+    group.add_argument("--category", help="Generate by category (e.g. reflected, stored, dom, bypass)")
+
+    # encode
+    p_enc = sub.add_parser("encode")
+    p_enc.add_argument("--method", required=True, choices=["base64","url","html","hex","reverse","wrap"])
+    p_enc.add_argument("--payload", required=True)
+
+    args = parser.parse_args()
+
+    if args.cmd == "list":
+        list_payloads(args.type)
+
+    elif args.cmd == "generate":
+        by = "id" if args.id else "category"
+        identifier = args.id if args.id else args.category
+        generate_payload(args.type, by, identifier)
+
+    elif args.cmd == "encode":
+        encode_payload(args.method, args.payload)
+
+    else:
+        parser.print_help()
+
+if __name__ == "__main__":
+    main()
